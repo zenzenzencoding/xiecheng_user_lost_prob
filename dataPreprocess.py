@@ -10,7 +10,7 @@ import numpy as np
 import xgboost as xgb
 import seaborn as sb
 import matplotlib as plt
-from config import dropedfeatures,fillNauWith999,fillNauWithMean,trianPath,fatherPath,originPath,predictPath
+from config import dropedfeatures,fillNauWith999,fillNauWithMean,trianPath,fatherPath,originPath,originPredictPath,predictPath
 import utils
 
 #读取数据
@@ -86,5 +86,5 @@ def splitTrainAndTest(dataProcessed,percentile =0.75):
     dataProcessed.iloc[percent:,:].to_csv(path_or_buf = fatherPath+"\\processed_test.csv",sep="\t",index=False)
 
 if __name__=="__main__":
-    dataDroped = dropFeature(data=predictPath)
+    dataDroped = dropFeature(data=originPredictPath)
     createUsrTag(createNewFeatures(missValueProcess(data=dataDroped))).to_csv(path_or_buf= fatherPath+"\\processed_predict.csv",sep="\t",index=False)

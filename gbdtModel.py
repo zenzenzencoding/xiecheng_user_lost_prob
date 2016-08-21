@@ -35,13 +35,16 @@ def trainMethod(trian=trianPath, test=testPath,predict = predictPath,method="gbd
     logger.info('[INFO]:GBDT算法-正在加载数据...')
     trianData = pd.read_csv(trian,sep="\t").drop(["usertag","d","arrival"],axis=1)
     testData = pd.read_csv(test,sep="\t").drop(["usertag","d","arrival"],axis=1)
-    predictionData = pd.read_csv(predict,sep="\t").drop(["usertag","d","arrival"],axis=1)
+    predData = pd.read_csv(predict,sep="\t").drop(["usertag","d","arrival"],axis=1)
     trian_X = trianData.iloc[:,1:]
     train_Y = trianData.iloc[:,0]
     test_X = testData.iloc[:,1:]
     test_Y = testData.iloc[:,0]
+    pred_X = predData.iloc[:,1:]
+    pred_sampleid = predData.iloc[:,0]
     dtrain = xgb.DMatrix(trian_X.values,label=train_Y.values)
     dtest = xgb.DMatrix(test_X.values,label=test_Y.values)
+    dpred = xgb.DMatrix(pred_X.values)
     logger.info('[INFO]:GBDT算法-完成加载数据！')
     # training parameter
     param = {'bst:max_depth': 5, 'bst:eta': 0.025, 'silent': 0, 'objective': 'binary:logistic'}
@@ -76,14 +79,18 @@ def trainMethod(trian=trianPath, test=testPath,predict = predictPath,method="gbd
         test_predict = bst.predict(dtest)
         test_predict_label = np.fromiter(map(lambda x: 1 if x > clf_threshold else 0, test_predict),dtype=np.int)
         test_label = dtest.get_label()
+        pred_prob = bst.predict(dpred)
         auc = metrics.roc_auc_score(test_label, test_predict, sample_weight=None)
-        print(test_label)
-        print(test_predict)
-        print(test_predict_label)
+        #print(test_label)
+        #print(test_predict)
+        #print(test_predict_label)
         precision,recall,thresholds = precision_recall_curve(test_label,test_predict)
         print(precision,recall,thresholds)
         pr = pd.DataFrame({"precision":precision,"recall":recall})
         prc= pr[pr.precision>=0.97].recall.max()
+        # 保存预测结果
+        pd.DataFrame({"sampleid": pred_sampleid, "prob": pred_prob}).to_csv(path_or_buf=fatherPath + "\\gbdt_predicted_prob.txt", sep="\t", index=False)
+
         print("AUC is %5.6f" % (auc))
         print("classification report")
         print(metrics.classification_report(list(test_label), test_predict_label))
@@ -96,7 +103,7 @@ def trainMethod(trian=trianPath, test=testPath,predict = predictPath,method="gbd
         print('precision-recall-curve')
         print(prc)
         logger.info("[INFO] precision-recall-curve:%s"%(prc))
-
+        logger.info("[INFO] GBDT-LR 算法:结束...")
 
     if method=="gbdt-lr":
         logger.info("[INFO] GBDT-LR 算法:正在训练...")
@@ -108,14 +115,19 @@ def trainMethod(trian=trianPath, test=testPath,predict = predictPath,method="gbd
                 intercept_scaling=1, solver='liblinear', max_iter=100)
         lr.fit(ntrain, dtrain.get_label())
         ntest = enc.transform(bst.predict(dtest,pred_leaf=True))
+        npred = enc.transform(bst.predict(dpred,pred_leaf=True))
 
         logger.info("[INFO] GBDT-LR 算法:正在预测...")
         test_predict = lr.predict_proba(ntest)
+        pred_predict = lr.predict_proba(npred)
         test_predict_label = lr.predict(ntest)
         auc = metrics.roc_auc_score(test_label, test_predict[:,1], sample_weight=None)
         precision, recall, _ = precision_recall_curve(test_label, test_predict_label)
         pr = pd.DataFrame({"precision": precision, "recall": recall})
         prc = pr[pr.precision >= 0.97].recall.max()
+        #保存预测结果
+        pd.DataFrame({"sampleid": pred_sampleid, "prob": pred_predict}).to_csv(path_or_buf=fatherPath + "\\gbdt_lr_predicted_prob.txt", sep="\t", index=False)
+
         print ("lr AUC is %5.6f" % (auc))
         print ('lr classification report')
         print (metrics.classification_report(list(test_label), test_predict_label))
