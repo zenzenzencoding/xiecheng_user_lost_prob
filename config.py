@@ -10,7 +10,7 @@ fatherPath = r"E:\zen\Documents\data\yhxwfx_data"
 originPath = r"E:\zen\Documents\data\yhxwfx_data\userlostprob_train.txt"
 trianPath = r"E:\zen\Documents\data\yhxwfx_data\processed_train.csv"
 testPath = r"E:\zen\Documents\data\yhxwfx_data\processed_test.csv"
-userlostprob_test = r"E:\zen\Documents\data\yhxwfx_data\userlostprob_test.txt"
+predictPath = r"E:\zen\Documents\data\yhxwfx_data\userlostprob_test.txt"
 
 # 缺失值 按列名处理
 # 缺失值超过 一半的 丢弃

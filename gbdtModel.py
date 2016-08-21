@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import time
 import sys
-from config import fatherPath,trianPath,testPath
+from config import fatherPath,trianPath,testPath,predictPath
 import logging
 from sklearn import metrics
 import xgboost as xgb
@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO,
                     filemode='w')
 logger = logging.getLogger(__name__)
 
-def trainMethod(trian=trianPath, test=testPath,method="gbdt"):
+def trainMethod(trian=trianPath, test=testPath,predict = predictPath,method="gbdt"):
     '''
     :param trian: 训练数据集路径
     :param test: 测试数据集路径
@@ -35,6 +35,7 @@ def trainMethod(trian=trianPath, test=testPath,method="gbdt"):
     logger.info('[INFO]:GBDT算法-正在加载数据...')
     trianData = pd.read_csv(trian,sep="\t").drop(["usertag","d","arrival"],axis=1)
     testData = pd.read_csv(test,sep="\t").drop(["usertag","d","arrival"],axis=1)
+    predictionData = pd.read_csv(predict,sep="\t").drop(["usertag","d","arrival"],axis=1)
     trian_X = trianData.iloc[:,1:]
     train_Y = trianData.iloc[:,0]
     test_X = testData.iloc[:,1:]
@@ -43,10 +44,10 @@ def trainMethod(trian=trianPath, test=testPath,method="gbdt"):
     dtest = xgb.DMatrix(test_X.values,label=test_Y.values)
     logger.info('[INFO]:GBDT算法-完成加载数据！')
     # training parameter
-    param = {'bst:max_depth': 5, 'bst:eta': 0.05, 'silent': 0, 'objective': 'binary:logistic'}
+    param = {'bst:max_depth': 5, 'bst:eta': 0.025, 'silent': 0, 'objective': 'binary:logistic'}
     param['nthread'] = 8
     param['eval_metric'] = ['logloss', 'auc']
-    param['subsample'] = 0.5
+    param['subsample'] = 0.7
     param['num_feature'] = 'sqrt'
     num_round = 1000
 
@@ -62,7 +63,7 @@ def trainMethod(trian=trianPath, test=testPath,method="gbdt"):
     feature_importances = pd.Series(bst.get_fscore())
     print(feature_importances.sort_values())
     #feature_importances.sort_values(by=, ascending=False, inplace=True)
-    feature_importances.sort_values().to_csv( fatherPath + '/feature_importances.csv')
+    #feature_importances.sort_values().to_csv( fatherPath + '/feature_importances.csv')
 
     #print ('best_score is %5.6f' % bst.best_score)
     #print ('best_iteration is %5d' % bst.best_iteration)
